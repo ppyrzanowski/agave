@@ -3371,7 +3371,7 @@ impl RpcClient {
     /// # })?;
     /// # Ok::<(), Error>(())
     /// ```
-    pub async fn get_account(&self, pubkey: &Pubkey) -> ClientResult<Account> {
+    pub async fn get_account(&self, pubkey: &Pubkey) -> ClientResult<UiAccount> {
         self.get_account_with_commitment(pubkey, self.commitment())
             .await?
             .value
@@ -3420,7 +3420,7 @@ impl RpcClient {
         &self,
         pubkey: &Pubkey,
         commitment_config: CommitmentConfig,
-    ) -> RpcResult<Option<Account>> {
+    ) -> RpcResult<Option<UiAccount>> {
         let config = RpcAccountInfoConfig {
             encoding: Some(UiAccountEncoding::Base64Zstd),
             commitment: Some(commitment_config),
@@ -3482,7 +3482,7 @@ impl RpcClient {
         &self,
         pubkey: &Pubkey,
         config: RpcAccountInfoConfig,
-    ) -> RpcResult<Option<Account>> {
+    ) -> RpcResult<Option<UiAccount>> {
         let response = self
             .send(
                 RpcRequest::GetAccountInfo,
@@ -3502,11 +3502,11 @@ impl RpcClient {
                     value: rpc_account,
                 } = serde_json::from_value::<Response<Option<UiAccount>>>(result_json)?;
                 trace!("Response account {:?} {:?}", pubkey, rpc_account);
-                let account = rpc_account.and_then(|rpc_account| rpc_account.decode());
+                // let account = rpc_account.and_then(|rpc_account| rpc_account.decode());
 
                 Ok(Response {
                     context,
-                    value: account,
+                    value: rpc_account,
                 })
             })
             .map_err(|err| {
@@ -3751,7 +3751,7 @@ impl RpcClient {
     /// # Ok::<(), Error>(())
     /// ```
     pub async fn get_account_data(&self, pubkey: &Pubkey) -> ClientResult<Vec<u8>> {
-        Ok(self.get_account(pubkey).await?.data)
+        Ok(self.get_account(pubkey).await?.data.decode().unwrap())
     }
 
     /// Returns minimum balance required to make an account with specified data length rent exempt.
