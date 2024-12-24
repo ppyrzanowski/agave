@@ -3371,7 +3371,7 @@ impl RpcClient {
     /// # })?;
     /// # Ok::<(), Error>(())
     /// ```
-    pub async fn get_account(&self, pubkey: &Pubkey) -> ClientResult<UiAccount> {
+    pub async fn get_account(&self, pubkey: &Pubkey) -> ClientResult<Account> {
         self.get_account_with_commitment(pubkey, self.commitment())
             .await?
             .value
@@ -3420,7 +3420,7 @@ impl RpcClient {
         &self,
         pubkey: &Pubkey,
         commitment_config: CommitmentConfig,
-    ) -> RpcResult<Option<UiAccount>> {
+    ) -> RpcResult<Option<Account>> {
         let config = RpcAccountInfoConfig {
             encoding: Some(UiAccountEncoding::Base64Zstd),
             commitment: Some(commitment_config),
@@ -3428,7 +3428,10 @@ impl RpcClient {
             min_context_slot: None,
         };
 
-        self.get_account_with_config(pubkey, config).await
+        let response = self.get_account_with_config(pubkey, config).await;
+        response.map(|Response { context, value }| {
+            Response { context, value: value.and_then(|rpc_account| rpc_account.decode()) }
+        })
     }
 
     /// Returns all information associated with the account of the provided pubkey.
@@ -3751,7 +3754,7 @@ impl RpcClient {
     /// # Ok::<(), Error>(())
     /// ```
     pub async fn get_account_data(&self, pubkey: &Pubkey) -> ClientResult<Vec<u8>> {
-        Ok(self.get_account(pubkey).await?.data.decode().unwrap())
+        Ok(self.get_account(pubkey).await?.data)
     }
 
     /// Returns minimum balance required to make an account with specified data length rent exempt.

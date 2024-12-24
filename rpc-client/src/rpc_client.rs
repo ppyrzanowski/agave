@@ -19,7 +19,7 @@ use {
     },
     serde::Serialize,
     serde_json::Value,
-    solana_account::{Account, ReadableAccount},
+    solana_account::Account,
     solana_account_decoder_client_types::token::{UiTokenAccount, UiTokenAmount},
     solana_account_decoder_client_types::UiAccount,
     solana_clock::{Epoch, Slot, UnixTimestamp},
@@ -2866,7 +2866,7 @@ impl RpcClient {
     /// let account = rpc_client.get_account(&alice_pubkey)?;
     /// # Ok::<(), Error>(())
     /// ```
-    pub fn get_account(&self, pubkey: &Pubkey) -> ClientResult<UiAccount> {
+    pub fn get_account(&self, pubkey: &Pubkey) -> ClientResult<Account> {
         self.invoke((self.rpc_client.as_ref()).get_account(pubkey))
     }
 
@@ -2909,7 +2909,7 @@ impl RpcClient {
         &self,
         pubkey: &Pubkey,
         commitment_config: CommitmentConfig,
-    ) -> RpcResult<Option<UiAccount>> {
+    ) -> RpcResult<Option<Account>> {
         self.invoke(
             (self.rpc_client.as_ref()).get_account_with_commitment(pubkey, commitment_config),
         )
@@ -3646,7 +3646,7 @@ impl RpcClient {
                 maybe_feature_account
                     .value
                     .map(|feature_account| {
-                        bincode::deserialize(&feature_account.data.decode().unwrap()).map_err(|_| {
+                        bincode::deserialize(&feature_account.data).map_err(|_| {
                             ClientError::from(ErrorKind::Custom(
                                 "Failed to deserialize feature account".to_string(),
                             ))
